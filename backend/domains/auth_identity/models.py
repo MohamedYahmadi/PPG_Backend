@@ -20,14 +20,20 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('PASSENGER', 'Passenger'),
         ('DRIVER', 'Driver'),
         ('CONTROLLER', 'Controller'),
-        ('ADMIN', 'Admin')
+        ('ADMIN', 'Admin'),
+        ('SUPER_ADMIN', 'Super Admin'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=20, unique=True)
+    email = models.EmailField(max_length=254, null=True, blank=True, unique=True)
+    full_name = models.CharField(max_length=150, null=True, blank=True)
+    avatar_url = models.CharField(max_length=500, null=True, blank=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='PASSENGER')
     is_active = models.BooleanField(default=True)
     fcm_token = models.CharField(max_length=255, null=True, blank=True)
+    preferences = models.JSONField(null=True, blank=True, default=dict)
+    language = models.CharField(max_length=10, default='fr')
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -40,9 +46,22 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         db_table = 'users'
-        # DÉCISION CTO: L'ORM Django ne doit JAMAIS altérer notre schéma DBA strict.
-        # Les partitions et triggers sont gérés via le DDL SQL.
-        # managed = False 
 
     def __str__(self):
         return f"{self.phone_number} ({self.role})"
+
+
+class PasswordResetToken(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey('auth_identity.User', on_delete=models.CASCADE)
+    token = models.CharField(max_length=64, unique=True)
+    is_used = models.BooleanField(default=False)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'password_reset_tokens'
+
+    def is_valid(self):
+        from django.utils import timezone
+        return not self.is_used and self.expires_at > timezone.now()

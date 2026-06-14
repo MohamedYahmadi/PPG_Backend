@@ -88,3 +88,53 @@ def process_gps_batch(driver_id: str, payload: dict):
     # 4. Insertion Groupée (Préserve la base PostgreSQL des I/O saturants)
     if valid_logs:
         GPSLog.objects.bulk_create(valid_logs)
+
+
+@shared_task(queue='gps_processing', bind=True, max_retries=1)
+def simulate_gps_route(self, route_id, vehicle_id, driver_id, interval_seconds=10, total_points=20):
+    from django.utils import timezone
+    from ..models import Route, Trip, Vehicle
+    from ..services import SimulationService
+
+    try:
+        route = Route.objects.get(id=route_id)
+        vehicle = Vehicle.objects.get(id=vehicle_id)
+    except (Route.DoesNotExist, Vehicle.DoesNotExist) as e:
+        logger.error(f"SIMULATION ERROR: {e}")
+        return "ROUTE_OR_VEHICLE_NOT_FOUND"
+
+    points = SimulationService.generate_simulated_points(route.path_geom, total_points)
+    if not points:
+        return "NO_POINTS_GENERATED"
+
+    trip = Trip.objects.create(
+        route=route,
+        vehicle=vehicle,
+        driver_id=driver_id,
+        scheduled_start=timezone.now(),
+        actual_start=timezone.now(),
+        status='IN_PROGRESS'
+    )
+
+    import time
+    for pt in points:
+        payload = {
+            'trip_id': str(trip.id),
+            'vehicle_id': str(vehicle_id),
+            'points': [{
+                'lat': pt['lat'],
+                'lng': pt['lng'],
+                'speed_kmh': pt['speed_kmh'],
+                'heading': pt['heading'],
+                'timestamp': timezone.now().isoformat()
+            }]
+        }
+        process_gps_batch(driver_id, payload)
+        time.sleep(interval_seconds)
+
+    trip.actual_end = timezone.now()
+    trip.status = 'COMPLETED'
+    trip.save()
+
+    logger.info(f"SIMULATION COMPLETE: Trip {trip.id} with {total_points} points")
+    return f"SIMULATED_{total_points}_POINTS"

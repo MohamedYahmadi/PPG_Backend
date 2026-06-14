@@ -53,6 +53,47 @@ class Trip(models.Model):
     class Meta:
         db_table = 'trips'
 
+class Schedule(models.Model):
+    DAY_CHOICES = [
+        ('MONDAY', 'Lundi'), ('TUESDAY', 'Mardi'), ('WEDNESDAY', 'Mercredi'),
+        ('THURSDAY', 'Jeudi'), ('FRIDAY', 'Vendredi'),
+        ('SATURDAY', 'Samedi'), ('SUNDAY', 'Dimanche'),
+        ('WEEKDAY', 'Jour de semaine'), ('WEEKEND', 'Week-end'), ('ALL', 'Tous les jours'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, related_name='schedules')
+    day_type = models.CharField(max_length=10, choices=DAY_CHOICES, default='ALL')
+    departure_time = models.TimeField()
+    arrival_time = models.TimeField()
+    frequency_minutes = models.IntegerField(null=True, blank=True, help_text="Intervalle en minutes si fréquence régulière")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'schedules'
+        ordering = ['route', 'day_type', 'departure_time']
+
+    def __str__(self):
+        return f"{self.route.name} - {self.departure_time} ({self.day_type})"
+
+
+class LineConnection(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    from_line = models.ForeignKey(Line, on_delete=models.CASCADE, related_name='connections_from')
+    to_line = models.ForeignKey(Line, on_delete=models.CASCADE, related_name='connections_to')
+    from_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='connections_from_station')
+    to_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='connections_to_station')
+    transfer_time_minutes = models.IntegerField(default=5, help_text="Temps de correspondance estimé")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'line_connections'
+        unique_together = ('from_line', 'to_line', 'from_station', 'to_station')
+
+    def __str__(self):
+        return f"{self.from_line.name} -> {self.to_line.name} via {self.from_station.name}"
+
+
 class GPSLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     trip = models.ForeignKey(Trip, on_delete=models.RESTRICT)

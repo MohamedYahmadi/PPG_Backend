@@ -31,7 +31,7 @@ class TransitConsumer(AsyncWebsocketConsumer):
 
     async def gps_update(self, event):
         payload = event['payload']
-        await self.send(text_data=json.stringify({
+        await self.send(text_data=json.dumps({
             'type': 'gps_update',
             'payload': payload
         }))
@@ -53,7 +53,7 @@ class AdminFleetConsumer(AsyncWebsocketConsumer):
 
     async def fleet_update(self, event):
         payload = event['payload']
-        await self.send(text_data=json.stringify({
+        await self.send(text_data=json.dumps({
             'type': 'fleet_update',
             'payload': payload
         }))
