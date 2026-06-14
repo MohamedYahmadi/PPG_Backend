@@ -1,8 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .serializers import LoginRequestSerializer, LogoutRequestSerializer, SignupRequestSerializer
+from .serializers import LoginRequestSerializer, LogoutRequestSerializer, SignupRequestSerializer, UserSerializer
 from domains.auth_identity.services import AuthService
+from domains.auth_identity.models import User
 
 class SignupAPIView(APIView):
     authentication_classes = []
@@ -60,13 +61,28 @@ class LogoutAPIView(APIView):
         # Invalidation immédiate du token (Redis Blacklist)
         AuthService.blacklist_token(serializer.validated_data['refresh_token'])
         
-        return Response({"message": "Déconnexion réussie. Token révoqué."}, status=200)
+class MeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+    
+    def patch(self, request):
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 from rest_framework import viewsets
 from domains.auth_identity.models import User
 from .serializers import UserSerializer
 
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from core.permissions import IsAdmin
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-created_at')
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated] # + IsAdmin later if needed
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsAdmin]

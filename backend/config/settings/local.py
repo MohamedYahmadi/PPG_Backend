@@ -15,7 +15,7 @@ def find_gdal():
     # 2. Check common installation paths
     common_paths = [
         r'C:\OSGeo4W\bin',
-        r'C:\Users\Mohamed_Yahmadi\AppData\Local\Programs\OSGeo4W\bin', # Votre chemin actuel
+        r'C:\Users\benhe\AppData\Local\Programs\OSGeo4W\bin', # Votre chemin actuel
         r'C:\Program Files\OSGeo4W\bin',
         r'C:\OSGeo4W64\bin',
     ]

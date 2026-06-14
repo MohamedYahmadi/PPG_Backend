@@ -2,9 +2,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.gis.geos import Point
-from .serializers import TicketPurchaseSerializer, TicketSerializer, OfflineValidationSyncSerializer
-from domains.ticketing_validation.services import TicketingService
-from domains.ticketing_validation.models import Ticket, ValidationLog
+from rest_framework import viewsets
+from .serializers import TicketPurchaseSerializer, TicketSerializer, OfflineValidationSyncSerializer, FraudAlertSerializer
+from domains.ticketing_validation.models import Ticket, ValidationLog, FraudAlert
+
+class FraudAlertViewSet(viewsets.ModelViewSet):
+    queryset = FraudAlert.objects.all().order_by('-created_at')
+    serializer_class = FraudAlertSerializer
+    permission_classes = [IsAuthenticated]
 from domains.wallet_payments.services import InsufficientFundsException
 from core.permissions import IsPassenger, IsController
 

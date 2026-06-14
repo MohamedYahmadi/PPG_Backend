@@ -60,3 +60,14 @@ class CreateDisputeAPIView(APIView):
             status='OPEN'
         )
         return Response(DisputeSerializer(dispute).data, status=201)
+
+from rest_framework import viewsets
+from core.permissions import IsAdmin
+
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+class FineViewSet(viewsets.ModelViewSet):
+    queryset = Fine.objects.all().order_by('-issued_at')
+    serializer_class = FineSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsAdmin]

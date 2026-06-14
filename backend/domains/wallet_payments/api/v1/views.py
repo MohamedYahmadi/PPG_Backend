@@ -52,3 +52,16 @@ class TopUpAPIView(APIView):
             "transaction_id": transaction_log.id,
             "new_balance": wallet.balance
         })
+
+from core.permissions import IsAdmin
+from .serializers import AdminWalletSerializer
+
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+class AdminWalletListView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated, IsAdmin]
+    
+    def get(self, request):
+        wallets = Wallet.objects.select_related('passenger').all()
+        return Response(AdminWalletSerializer(wallets, many=True).data)

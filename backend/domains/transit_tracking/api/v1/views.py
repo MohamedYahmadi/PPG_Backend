@@ -1,15 +1,19 @@
+from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .serializers import RouteSerializer, TripSerializer
-from domains.transit_tracking.models import Route, Trip
+from .serializers import RouteSerializer, TripSerializer, LineSerializer
+from domains.transit_tracking.models import Route, Trip, Line
 
-class RouteListAPIView(APIView):
-    permission_classes = [AllowAny]
-    
-    def get(self, request):
-        routes = Route.objects.filter(is_active=True)
-        return Response(RouteSerializer(routes, many=True).data)
+class LineViewSet(viewsets.ModelViewSet):
+    queryset = Line.objects.all()
+    serializer_class = LineSerializer
+    permission_classes = [IsAuthenticated]
+
+class RouteViewSet(viewsets.ModelViewSet):
+    queryset = Route.objects.all()
+    serializer_class = RouteSerializer
+    permission_classes = [IsAuthenticated]
 
 class TripListAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -21,19 +25,29 @@ class TripListAPIView(APIView):
         trips = Trip.objects.filter(status='IN_PROGRESS').select_related('route', 'vehicle')
         return Response(TripSerializer(trips, many=True).data)
 
-class LiveVehiclesAPIView(APIView):
-    """
-    DÉCISION CTO : Fallback REST si les WebSockets sont bloqués par un proxy d'entreprise.
-    Lit directement depuis le Cache Redis mis à jour par Celery.
-    """
+from domains.transit_tracking.models import Route, Trip, Line, Station, GPSLog
+
+class LiveFleetAPIView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        from django.core.cache import cache
-        # Implémentation basique (En production, on stocke un SET des véhicules actifs dans Redis)
-        return Response({
-            "message": "Fallback API REST actif. Les positions sont en cache Redis."
-        })
+        active_trips = Trip.objects.filter(status='IN_PROGRESS').select_related('vehicle', 'route')
+        fleet_data = []
+        
+        for trip in active_trips:
+            latest_log = GPSLog.objects.filter(trip=trip).order_by('-recorded_at').first()
+            fleet_data.append({
+                "id": str(trip.vehicle.id),
+                "fleet_id": trip.vehicle.fleet_id,
+                "line": trip.route.line.name,
+                "status": trip.status,
+                "lat": latest_log.location.y if latest_log else 36.8, # Fallback Tunis
+                "lng": latest_log.location.x if latest_log else 10.1,
+                "speed": float(latest_log.speed_kmh) if latest_log else 0,
+                "driver": "Driver " + str(trip.driver_id)[:8]
+            })
+            
+        return Response(fleet_data)
 
 from rest_framework import viewsets
 from domains.transit_tracking.models import Station

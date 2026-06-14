@@ -1,10 +1,15 @@
 from rest_framework import serializers
-from domains.transit_tracking.models import Route, Trip, Vehicle
+from domains.transit_tracking.models import Route, Trip, Vehicle, Line
+
+class LineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Line
+        fields = ['id', 'name', 'color_code', 'is_active']
 
 class RouteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
-        fields = ['id', 'name', 'is_active']
+        fields = ['id', 'line', 'name', 'path_geom', 'is_active']
 
 class VehicleSerializer(serializers.ModelSerializer):
     class Meta:

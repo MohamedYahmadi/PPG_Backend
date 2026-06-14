@@ -20,7 +20,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('PASSENGER', 'Passenger'),
         ('DRIVER', 'Driver'),
         ('CONTROLLER', 'Controller'),
-        ('ADMIN', 'Admin')
+        ('ADMIN', 'Admin'),
+        ('SUPER_ADMIN', 'Super Admin')
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

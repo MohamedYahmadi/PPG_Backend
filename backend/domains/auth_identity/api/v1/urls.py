@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import LoginAPIView, LogoutAPIView, UserViewSet, SignupAPIView
+from .views import LoginAPIView, LogoutAPIView, UserViewSet, SignupAPIView, MeAPIView
 
 router = DefaultRouter()
 router.register(r'admin/users', UserViewSet, basename='admin-users')
@@ -12,5 +12,6 @@ urlpatterns = [
     path('logout/', LogoutAPIView.as_view(), name='api_auth_logout'),
     # L'Endpoint natif de SimpleJWT pour rafraichir le token d'accès sans mot de passe
     path('token/refresh/', TokenRefreshView.as_view(), name='api_token_refresh'),
+    path('me/', MeAPIView.as_view(), name='api_auth_me'),
     path('', include(router.urls)),
 ]

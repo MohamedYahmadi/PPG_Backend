@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from domains.ticketing_validation.models import Ticket
+from domains.ticketing_validation.models import Ticket, FraudAlert
+
+class FraudAlertSerializer(serializers.ModelSerializer):
+    passenger_phone = serializers.CharField(source='passenger.phone_number', read_only=True)
+    class Meta:
+        model = FraudAlert
+        fields = ['id', 'passenger_phone', 'ticket', 'reason', 'severity', 'is_resolved', 'created_at']
 
 class TicketPurchaseSerializer(serializers.Serializer):
     zone_validity = serializers.CharField(max_length=50, required=True)

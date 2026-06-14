@@ -6,6 +6,12 @@ class WalletSerializer(serializers.ModelSerializer):
         model = Wallet
         fields = ['id', 'balance', 'currency', 'last_synced']
 
+class AdminWalletSerializer(serializers.ModelSerializer):
+    passenger_phone = serializers.CharField(source='passenger.phone_number', read_only=True)
+    class Meta:
+        model = Wallet
+        fields = ['id', 'passenger_phone', 'balance', 'currency', 'last_synced']
+
 class WalletTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WalletTransaction

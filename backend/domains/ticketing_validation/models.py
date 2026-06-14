@@ -37,3 +37,15 @@ class ValidationLog(models.Model):
 
     class Meta:
         db_table = 'validation_logs'
+
+class FraudAlert(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    passenger = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, null=True, blank=True)
+    reason = models.TextField()
+    severity = models.CharField(max_length=20, default='HIGH')
+    is_resolved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'fraud_alerts'
