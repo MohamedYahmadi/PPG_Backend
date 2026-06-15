@@ -10,9 +10,8 @@ django.setup()
 
 from django.db import transaction
 from django.contrib.auth.hashers import make_password
-from django.contrib.gis.geos import Point, LineString
 from domains.auth_identity.models import User
-from domains.transit_tracking.models import Line, Route, Station, Vehicle
+from domains.transit_tracking.models import Line, Trajet, Station, Vehicle, TrajetStation
 from domains.wallet_payments.models import Wallet
 
 @transaction.atomic
@@ -65,18 +64,22 @@ def run_seeders():
         )
         print(f"✅ Chauffeur créé : {driver_phone}")
 
-    # 5. Création Géographique (PostGIS)
+    # 5. Création Géographique
     if not Line.objects.exists():
         line = Line.objects.create(name="TGM", color_code="#0000FF")
-        Route.objects.create(
-            line=line, 
+        station1 = Station.objects.create(name="Tunis Marine", location_lat=36.8065, location_lng=10.1815, has_kiosk=True)
+        station2 = Station.objects.create(name="Marsa Plage", location_lat=36.8833, location_lng=10.3293, has_kiosk=True)
+        trajet = Trajet.objects.create(
+            line=line,
             name="Tunis -> Marsa",
-            path_geom=LineString(Point(10.1815, 36.8065), Point(10.3293, 36.8833), srid=4326)
+            start_station=station1,
+            end_station=station2,
+            path_coordinates="36.8065,10.1815;36.8833,10.3293"
         )
-        Station.objects.create(name="Tunis Marine", location=Point(10.1815, 36.8065, srid=4326), has_kiosk=True)
-        Station.objects.create(name="Marsa Plage", location=Point(10.3293, 36.8833, srid=4326), has_kiosk=True)
+        TrajetStation.objects.create(trajet=trajet, station=station1, order_number=1, time_to_next_station=15)
+        TrajetStation.objects.create(trajet=trajet, station=station2, order_number=2, time_to_next_station=0)
         Vehicle.objects.create(plate_number="123-TU-4567", fleet_id="TGM-001", capacity=300)
-        print("✅ Données géographiques PostGIS (Lignes, Routes, Stations) créées.")
+        print("✅ Données géographiques (Lignes, Trajets, Stations) créées.")
 
     print("🎉 Base de données initialisée avec succès.")
 
