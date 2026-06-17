@@ -53,6 +53,7 @@ class VehicleSerializer(serializers.ModelSerializer):
 class TrajetSerializer(serializers.ModelSerializer):
     start_station = serializers.SerializerMethodField()
     end_station = serializers.SerializerMethodField()
+    line = LineSerializer(read_only=True)
 
     class Meta:
         model = Trajet
@@ -169,14 +170,32 @@ class DriverSessionSerializer(serializers.ModelSerializer):
     departure_station = StationSerializer(read_only=True)
     arrival_station = StationSerializer(read_only=True)
     current_station = StationSerializer(read_only=True)
+    line_name = serializers.SerializerMethodField()
+    plate_number = serializers.SerializerMethodField()
+    current_station_name = serializers.SerializerMethodField()
+    current_trip_id = serializers.SerializerMethodField()
 
     class Meta:
         model = DriverSession
         fields = ['id', 'driver_id', 'trajet', 'vehicle_id', 'departure_station', 'arrival_station',
-                  'current_station', 'current_order', 'status', 'started_at', 'updated_at', 'finished_at']
+                  'current_station', 'current_order', 'status', 'started_at', 'updated_at', 'finished_at',
+                  'line_name', 'plate_number', 'current_station_name', 'current_trip_id']
 
     def get_trajet(self, obj):
         return TrajetSerializer(obj.trajet).data
+
+    def get_line_name(self, obj):
+        return obj.trajet.line.name if obj.trajet and obj.trajet.line else None
+
+    def get_plate_number(self, obj):
+        return obj.vehicle.plate_number if obj.vehicle else None
+
+    def get_current_station_name(self, obj):
+        return obj.current_station.name if obj.current_station else None
+
+    def get_current_trip_id(self, obj):
+        trip = Trip.objects.filter(driver_id=obj.driver_id, status='IN_PROGRESS').first()
+        return str(trip.id) if trip else None
 
 
 class StartJourneySerializer(serializers.Serializer):

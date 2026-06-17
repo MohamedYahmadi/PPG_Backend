@@ -13,5 +13,5 @@ class WalletTransactionSerializer(serializers.ModelSerializer):
 
 class TopUpSerializer(serializers.Serializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=3, required=True)
-    gateway = serializers.ChoiceField(choices=['D17', 'ClicToPay'], required=True)
-    payment_token = serializers.CharField(max_length=255, required=True)
+    gateway = serializers.ChoiceField(choices=['D17', 'ClicToPay', 'MOBILE'], required=False, default='MOBILE')
+    payment_token = serializers.CharField(max_length=255, required=False, default='mobile-topup')

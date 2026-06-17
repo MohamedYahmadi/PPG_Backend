@@ -8,7 +8,7 @@ from .views import (
     DriverTripSetupAPIView, DriverUpdateStationAPIView, FetchStationsAPIView,
     GTFSImportAPIView, GTFSSyncAPIView, ImportedRouteStationViewSet,
     ImportedRouteViewSet, ImportedStationViewSet, LineViewSet,
-    TrajetListAPIView, TrajetStationViewSet, TrajetViewSet,
+    TrajetListAPIView, TrajetDetailAPIView, TrajetStationViewSet, TrajetViewSet,
     PassengerLiveTripsAPIView, TripListAPIView, LiveVehiclesAPIView,
     PromoteRoutesAPIView, PromoteStationsAPIView, StationViewSet,
     UserSearchBusAPIView, VehicleViewSet, TripViewSet,
@@ -28,6 +28,7 @@ router.register(r'trips', TripViewSet, basename='admin-trips')
 
 urlpatterns = [
     path('trajets/', TrajetListAPIView.as_view(), name='api_transit_trajets'),
+    path('trajets/<uuid:trajet_id>/', TrajetDetailAPIView.as_view(), name='api_transit_trajet_detail'),
     path('trips/active/', TripListAPIView.as_view(), name='api_transit_trips_active'),
     path('passenger/live-trips/', PassengerLiveTripsAPIView.as_view(), name='api_passenger_live_trips'),
     path('live-vehicles/', LiveVehiclesAPIView.as_view(), name='api_transit_live_vehicles'),

@@ -89,7 +89,15 @@ class TrajetListAPIView(APIView):
 
     def get(self, request):
         trajets = Trajet.objects.filter(is_active=True)
-        return Response(TrajetSerializer(trajets, many=True).data)
+        return Response(TrajetWithStationsSerializer(trajets, many=True).data)
+
+
+class TrajetDetailAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, trajet_id):
+        trajet = get_object_or_404(Trajet, id=trajet_id)
+        return Response(TrajetWithStationsSerializer(trajet).data)
 
 
 class TripListAPIView(APIView):
@@ -293,10 +301,22 @@ class UserSearchBusAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        search_q = request.query_params.get('q')
+        if search_q:
+            trajets = Trajet.objects.filter(
+                Q(name__icontains=search_q) | Q(line__name__icontains=search_q),
+                is_active=True
+            )
+            stations = Station.objects.filter(name__icontains=search_q)
+            return Response({
+                "trajets": TrajetSerializer(trajets, many=True).data,
+                "stations": StationSerializer(stations, many=True).data,
+            })
+
         user_lat = request.query_params.get('lat')
         user_lng = request.query_params.get('lng')
         if not user_lat or not user_lng:
-            return Response({"error": "Paramètres 'lat' et 'lng' requis."}, status=400)
+            return Response({"error": "Paramètres 'lat' et 'lng' requis pour la recherche par proximité."}, status=400)
         try:
             user_lat = float(user_lat)
             user_lng = float(user_lng)
